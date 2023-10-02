@@ -116,7 +116,7 @@ class CarAgent():
             control.manual_gear_shift = False
             self.next_state = AgentState.STOP
         else:
-            self.target_wp, self.target_road_option = self.wp_q[0]
+            self.target_wp, self.target_road_option = self.wp_q[-1]
             control = self.controller.run_step(self.target_speed, self.target_wp)
         
         # apply control
@@ -134,13 +134,13 @@ class CarAgent():
             if len(self.wp_q) == 0:
                 last_wp = self.map.get_waypoint(self.vehicle.get_location())
             else:
-                last_wp = self.wp_q[-1][0]
+                last_wp = self.wp_q[0][0]
             next_wps = list(last_wp.next(self.target_lookahead))
             if len(next_wps) == 0:
                 return
             else:
                 next_wps = next_wps[0].next_until_lane_end(self.target_lookahead)
-                for wp in next_wps[:k]:
+                for wp in reversed(next_wps[:k]):
                     self.wp_q.appendleft((wp, RoadOption.LANEFOLLOW))
                     self.world.debug.draw_point(wp.transform.location, life_time=5.0)
 
@@ -162,12 +162,11 @@ class CarAgent():
                 break
         if num_waypoint_removed > 0:
             for _ in range(num_waypoint_removed):
-                wp, roadoption = self.wp_q[0]
+                wp, roadoption = self.wp_q[-1]
                 if roadoption == RoadOption.CHANGELANELEFT or roadoption == RoadOption.CHANGELANERIGHT:
                     print("completed lane change")
                     self.done = True
                 # visualize
-                print("passed wp on section:", wp.section_id, ", junction? ", wp.junction_id)
                 self.wp_q.pop()
         
     def _update_next_state(self):
